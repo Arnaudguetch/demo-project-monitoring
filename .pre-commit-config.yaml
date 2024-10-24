@@ -34,3 +34,15 @@ repos:
   rev: v4.0.1
   hooks:
     - id: flake8
+
+repo:
+  - repo: local
+    hooks:
+      - id: iris-classification-hook
+        name: Run Iris Classification
+        entry: python iris_classification.py
+        language: python
+        types: [python]
+        always_run: true
+
+      
