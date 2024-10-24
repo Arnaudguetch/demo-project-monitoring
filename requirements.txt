@@ -3,3 +3,6 @@ numpy
 scikit-learn
 matplotlib
 pre-commit
+flake8
+ruff
+mypy
