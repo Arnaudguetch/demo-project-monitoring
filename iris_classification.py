@@ -7,89 +7,107 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.datasets import load_iris
 import pandas as pd
+from prometheus_client import start_http_server, Summary, Counter
 
-# Charger les données du dataset Iris
-iris = load_iris()
-X = pd.DataFrame(iris.data, columns=iris.feature_names)
-y = pd.Series(iris.target)
+REQUEST_TIME = Summary("request_processing_seconds", "Time spent processing request")
+ERRORS = Counter("classification_errors", "Number of classification errors")
 
-# Séparation des données en ensembles d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
 
-# Construction de la pipeline
-pipeline = Pipeline(
-    steps=[
-        ("scaler", StandardScaler()),  # Standardisation
-        (
-            "classifier",
-            RandomForestClassifier(random_state=42),
-        ),  # Modèle de classification
-    ]
-)
+# @REQUEST_TIME.time()
+def run_iris_classification() -> None:
 
-# Définition des paramètres à explorer dans GridSearchCV
-param_grid = {
-    "classifier__n_estimators": [50, 100, 200],
-    "classifier__max_depth": [None, 10, 20, 30],
-    "classifier__min_samples_split": [
-        2,
-        5,
-        10,
-    ],  # Minimum samples required to split a node
-    "classifier__min_samples_leaf": [1, 2, 4],  # Minimum samples in a leaf
-}
+    try:
+        # Charger les données du dataset Iris
+        iris = load_iris()
+        X = pd.DataFrame(iris.data, columns=iris.feature_names)
+        y = pd.Series(iris.target)
 
-# Démarrage du tracking MLflow
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
-experiment_name = "RandomForest_iris"
+        # Séparation des données en ensembles d'entraînement et de test
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42
+        )
 
-# Vérifier ou créer l'expérience
-try:
-    mlflow.create_experiment(experiment_name)
-except mlflow.exceptions.MlflowException as e:
-    if "already exists" in str(e):
-        print(f"L'expérience '{experiment_name}' existe déjà.")
-    else:
-        raise e
+        # Construction de la pipeline
+        pipeline = Pipeline(
+            steps=[
+                ("scaler", StandardScaler()),  # Standardisation
+                (
+                    "classifier",
+                    RandomForestClassifier(random_state=42),
+                ),  # Modèle de classification
+            ]
+        )
 
-mlflow.set_experiment(experiment_name)
+        # Définition des paramètres à explorer dans GridSearchCV
+        param_grid = {
+            "classifier__n_estimators": [50, 100, 200],
+            "classifier__max_depth": [None, 10, 20, 30],
+            "classifier__min_samples_split": [
+                2,
+                5,
+                10,
+            ],  # Minimum samples required to split a node
+            "classifier__min_samples_leaf": [1, 2, 4],  # Minimum samples in a leaf
+        }
 
-with mlflow.start_run():
-    # Entraînement avec GridSearch et validation croisée
-    grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1, verbose=2)
-    grid_search.fit(X_train, y_train)
+        # Démarrage du tracking MLflow
+        mlflow.set_tracking_uri("http://127.0.0.1:5000")
+        experiment_name = "RandomForest_iris"
 
-    # Prédiction sur les données de test
-    y_pred = grid_search.best_estimator_.predict(X_test)
+        # Vérifier ou créer l'expérience
+        try:
+            mlflow.create_experiment(experiment_name)
+        except mlflow.exceptions.MlflowException as e:
+            if "already exists" in str(e):
+                print(f"L'expérience '{experiment_name}' existe déjà.")
+            else:
+                raise e
 
-    # Mesure de la précision
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Accuracy: {accuracy * 100:.2f}%")
+        mlflow.set_experiment(experiment_name)
 
-    # Affichage du rapport de classification
-    print(classification_report(y_test, y_pred, target_names=iris.target_names))
+        with mlflow.start_run():
+            # Entraînement avec GridSearch et validation croisée
+            grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1, verbose=2)
+            grid_search.fit(X_train, y_train)
 
-    # Logging des hyperparamètres et des résultats dans MLflow
-    mlflow.log_param(
-        "best_n_estimators", grid_search.best_params_["classifier__n_estimators"]
-    )
-    mlflow.log_param(
-        "best_max_depth", grid_search.best_params_["classifier__max_depth"]
-    )
-    mlflow.log_param(
-        "best_min_samples_split",
-        grid_search.best_params_["classifier__min_samples_split"],
-    )
-    mlflow.log_param(
-        "best_min_samples_leaf",
-        grid_search.best_params_["classifier__min_samples_leaf"],
-    )
-    mlflow.log_metric("accuracy", accuracy)
+            # Prédiction sur les données de test
+            y_pred = grid_search.best_estimator_.predict(X_test)
 
-    # Enregistrer le modèle dans MLflow
-    mlflow.sklearn.log_model(grid_search.best_estimator_, "random_forest_model")
-    print("Modèle sauvegardé dans MLflow")
+            # Mesure de la précision
+            accuracy = accuracy_score(y_test, y_pred)
+            print(f"Accuracy: {accuracy * 100:.2f}%")
 
-# Ajoutez une ligne vide à la fin du fichier
+            # Affichage du rapport de classification
+            print(classification_report(y_test, y_pred, target_names=iris.target_names))
+
+            # Logging des hyperparamètres et des résultats dans MLflow
+            mlflow.log_param(
+                "best_n_estimators",
+                grid_search.best_params_["classifier__n_estimators"],
+            )
+            mlflow.log_param(
+                "best_max_depth", grid_search.best_params_["classifier__max_depth"]
+            )
+            mlflow.log_param(
+                "best_min_samples_split",
+                grid_search.best_params_["classifier__min_samples_split"],
+            )
+            mlflow.log_param(
+                "best_min_samples_leaf",
+                grid_search.best_params_["classifier__min_samples_leaf"],
+            )
+            mlflow.log_metric("accuracy", accuracy)
+
+            # Enregistrer le modèle dans MLflow
+            mlflow.sklearn.log_model(grid_search.best_estimator_, "random_forest_model")
+            print("Modèle sauvegardé dans MLflow")
+
+    except Exception as e:
+        print(f"Erreur lors de l'exécution de la classification : {e}")
+        ERRORS.inc()  # Incrémente le compteur d'erreurs
+
+
+# Démarrer le serveur HTTP de Prometheus
+if __name__ == "__main__":
+    start_http_server(8000)
+    run_iris_classification()
