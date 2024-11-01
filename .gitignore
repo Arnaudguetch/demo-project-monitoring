@@ -1,2 +1,9 @@
 *env/
+
 *history/
+
+*mypy_cache/
+
+*ruff_cache/
+
+mlruns/
