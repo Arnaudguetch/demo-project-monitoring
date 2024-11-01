@@ -35,12 +35,16 @@ jobs:
       - name: Start MLflow server
         run: |
           mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 --port 5000 &
-        env:
-          MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'
+          sleep 5  # Attendre un peu que le serveur démarre
+          # Vérifier si le serveur est opérationnel
+          until curl -s http://127.0.0.1:5000/api/2.0/health | grep -q '"status":"healthy"'; do
+            echo "Attente que le serveur MLflow soit opérationnel..."
+            sleep 5  # Attendre 5 secondes avant de réessayer
+          done
 
       # Exécuter le script d'entraînement du modèle avec MLflow
       - name: Train the model with MLflow
         run: |
           python iris_classification.py  # Remplacez par le chemin de votre script ML
         env:
-           MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'
+          MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'

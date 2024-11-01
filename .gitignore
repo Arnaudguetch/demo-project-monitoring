@@ -7,3 +7,15 @@
 *ruff_cache/
 
 mlruns/
+
+mlartifacts/
+
+logs/
+
+prometheus-2.44.0.linux-amd64/
+
+prometheus-2.44.0.linux-amd64.tar.gz
+
+grafana-enterprise-11.3.0.darwin-amd64.tar.gz
+
+grafana-v11.3.0/

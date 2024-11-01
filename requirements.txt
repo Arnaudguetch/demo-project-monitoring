@@ -7,3 +7,4 @@ flake8
 ruff
 mypy
 mlflow
+prometheus_client
