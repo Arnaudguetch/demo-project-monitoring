@@ -43,7 +43,7 @@ param_grid = {
 
 # Démarrage du tracking MLflow
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
-experiment_name = "RandomForest_Iris"
+experiment_name = "RandomForest_iris"
 
 # Vérifier ou créer l'expérience
 try:
