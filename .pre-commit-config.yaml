@@ -42,5 +42,5 @@ repos:
         entry: python iris_classification.py
         language: python
         types: [python]
-        additional_dependencies: [pandas, scikit-learn]
+        additional_dependencies: [pandas, scikit-learn, mlflow]
         always_run: true
