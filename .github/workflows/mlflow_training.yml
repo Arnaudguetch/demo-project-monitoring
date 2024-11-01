@@ -31,9 +31,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt  # Assurez-vous d'avoir un fichier requirements.txt qui inclut scikit-learn, mlflow, pandas, etc.
 
+      # Démarrer le serveur MLflow en arrière-plan
+      - name: Start MLflow server
+        run: |
+          mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns --host 0.0.0.0 --port 5000 &
+        env:
+          MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'
+
       # Exécuter le script d'entraînement du modèle avec MLflow
       - name: Train the model with MLflow
         run: |
           python iris_classification.py  # Remplacez par le chemin de votre script ML
         env:
-           MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'  # URL de votre serveur MLflow
+           MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'

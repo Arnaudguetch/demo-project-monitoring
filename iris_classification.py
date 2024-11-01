@@ -1,4 +1,3 @@
-# Importation des bibliothèques nécessaires
 import mlflow
 import mlflow.sklearn
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -38,22 +37,28 @@ param_grid = {
         2,
         5,
         10,
-    ],  # Nombre minimum d'échantillons requis pour diviser un nœud
-    "classifier__min_samples_leaf": [
-        1,
-        2,
-        4,
-    ],  # Nombre minimum d'échantillons dans une feuille
+    ],  # Minimum samples required to split a node
+    "classifier__min_samples_leaf": [1, 2, 4],  # Minimum samples in a leaf
 }
 
-# Initialisation de GridSearchCV
-grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1, verbose=2)
-
 # Démarrage du tracking MLflow
-mlflow.set_experiment("RandomForest_Iris")
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
+experiment_name = "RandomForest_Iris"
+
+# Vérifier ou créer l'expérience
+try:
+    mlflow.create_experiment(experiment_name)
+except mlflow.exceptions.MlflowException as e:
+    if "already exists" in str(e):
+        print(f"L'expérience '{experiment_name}' existe déjà.")
+    else:
+        raise e
+
+mlflow.set_experiment(experiment_name)
 
 with mlflow.start_run():
     # Entraînement avec GridSearch et validation croisée
+    grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1, verbose=2)
     grid_search.fit(X_train, y_train)
 
     # Prédiction sur les données de test
@@ -81,10 +86,10 @@ with mlflow.start_run():
         "best_min_samples_leaf",
         grid_search.best_params_["classifier__min_samples_leaf"],
     )
-
     mlflow.log_metric("accuracy", accuracy)
 
     # Enregistrer le modèle dans MLflow
     mlflow.sklearn.log_model(grid_search.best_estimator_, "random_forest_model")
-
     print("Modèle sauvegardé dans MLflow")
+
+# Ajoutez une ligne vide à la fin du fichier
