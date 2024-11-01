@@ -1,0 +1,39 @@
+name: MLflow Model Training
+
+# Déclencher l'action lors du push ou pull request sur la branche principale
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Définir les jobs
+jobs:
+  train_model:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Vérifier le code du dépôt
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Installer Python et pip
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10  # Vous pouvez ajuster la version de Python ici
+
+      # Installation des dépendances du projet
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Assurez-vous d'avoir un fichier requirements.txt qui inclut scikit-learn, mlflow, pandas, etc.
+
+      # Exécuter le script d'entraînement du modèle avec MLflow
+      - name: Train the model with MLflow
+        run: |
+          python iris_classification.py  # Remplacez par le chemin de votre script ML
+        env:
+           MLFLOW_TRACKING_URI: 'http://127.0.0.1:5000'  # URL de votre serveur MLflow
